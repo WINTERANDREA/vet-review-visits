@@ -83,3 +83,22 @@ export async function GET(
     );
   }
 }
+
+export async function DELETE(
+  _req: Request,
+  { params }: { params: { id: string } }
+) {
+  try {
+    const id = params.id;
+    await prisma.owner.delete({
+      where: { id },
+    });
+    return NextResponse.json({ success: true });
+  } catch (e: any) {
+    console.error("[records/owner/:id] DELETE error", e);
+    return NextResponse.json(
+      { error: e?.message || String(e) },
+      { status: 500 }
+    );
+  }
+}

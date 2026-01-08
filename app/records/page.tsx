@@ -12,7 +12,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Search, Upload, Loader2, User, Calendar } from "lucide-react";
+import { Search, Upload, Loader2, User, Calendar, Trash2 } from "lucide-react";
 import Link from "next/link";
 
 type OwnerRow = {
@@ -31,6 +31,7 @@ export default function Records() {
   const [q, setQ] = useState("");
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState<string | null>(null);
+  const [deleting, setDeleting] = useState<string | null>(null);
 
   useEffect(() => {
     (async () => {
@@ -54,6 +55,24 @@ export default function Records() {
   });
 
   const fmt = (iso?: string | null) => (iso ? iso.slice(0, 10) : "—");
+
+  const handleDelete = async (id: string) => {
+    if (!confirm("Sei sicuro di voler eliminare questo proprietario e tutti i dati associati?")) {
+      return;
+    }
+    setDeleting(id);
+    try {
+      const res = await fetch(`/api/records/owner/${id}`, {
+        method: "DELETE",
+      });
+      if (!res.ok) throw new Error("Errore durante l'eliminazione");
+      setRows((prev) => prev.filter((r) => r.id !== id));
+    } catch (e: any) {
+      alert(e.message);
+    } finally {
+      setDeleting(null);
+    }
+  };
 
   return (
     <main className="space-y-6">
@@ -119,7 +138,7 @@ export default function Records() {
                       Ultima Visita
                     </TableHead>
                     <TableHead className="text-center">Link</TableHead>
-                    <TableHead className="text-right"></TableHead>
+                    <TableHead className="text-right">Azioni</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -147,11 +166,26 @@ export default function Records() {
                         <Badge variant="outline">{r.linksCount}</Badge>
                       </TableCell>
                       <TableCell className="text-right">
-                        <Link href={`/records/${r.id}`}>
-                          <Button variant="ghost" size="sm">
-                            Dettagli
+                        <div className="flex items-center justify-end gap-2">
+                          <Link href={`/records/${r.id}`}>
+                            <Button variant="ghost" size="sm">
+                              Dettagli
+                            </Button>
+                          </Link>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleDelete(r.id)}
+                            disabled={deleting === r.id}
+                            className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                          >
+                            {deleting === r.id ? (
+                              <Loader2 className="h-4 w-4 animate-spin" />
+                            ) : (
+                              <Trash2 className="h-4 w-4" />
+                            )}
                           </Button>
-                        </Link>
+                        </div>
                       </TableCell>
                     </TableRow>
                   ))}
